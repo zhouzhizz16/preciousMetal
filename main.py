@@ -37,4 +37,11 @@ def precious_metal_analysis(ana_mode,ana_params):
 
 
 
-# if __name__=='__main__':
+if __name__=='__main__':
+    ana_params = {
+
+    }
+    res = precious_metal_analysis('calender_quant', ana_params)
+
+    import json
+    print json.dumps(res,ensure_ascii=False,indent=4)

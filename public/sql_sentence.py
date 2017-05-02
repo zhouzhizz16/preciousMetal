@@ -1,3 +1,6 @@
+#!/usr/lib/env python
+#-*- coding=utf-8 -*-
+
 import traceback
 
 def execute_insert(conn,sql):
@@ -9,6 +12,7 @@ def execute_insert(conn,sql):
         print traceback.print_exc()
         conn.rollback()
         # rows = 'sql错误'
+    conn.commit()
     cur.close()
     # return rows
 
