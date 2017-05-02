@@ -1,0 +1,9 @@
+.sc_env/
+.idea
+.iml
+
+# Python:
+py_log/
+**/*.pyo
+**/*.pyc
+**/*.py~# Created by .ignore support plugin (hsz.mobi)
