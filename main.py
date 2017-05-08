@@ -5,7 +5,7 @@
 import sys
 import MySQLdb
 
-from analysis.calender_quant import calender_quant_analysis
+from analysis.calender_quant import get_calender_quant_analysis
 from analysis.calender_quali import calender_quali_analysis
 from analysis.time_series import time_series_analysis
 from analysis.technical import technical_analysis
@@ -20,7 +20,7 @@ def precious_metal_analysis(ana_mode,ana_params):
 
     if ana_mode == 'calender_quant':
         # 财经日历定量分析
-        res = calender_quant_analysis(ana_params)
+        res = get_calender_quant_analysis(ana_params)
     elif ana_mode == 'calender_quali':
         # 财经日历定性分析
         res = calender_quali_analysis(ana_params)
