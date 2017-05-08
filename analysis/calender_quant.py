@@ -24,7 +24,7 @@ def get_calender_quant_analysis(ana_params):
 
 
     sql_sel = "select * from calender_quant_res where eco_index = '%s' and product = '%s'"%(index_name,prod_name)
-    row_res = execute_select(sql_sel)
+    row_res = execute_select(conn,sql_sel)
 
     res = []
     res.append(['eco_index','pub_nation','pub_time','product','importance','time_precision','time_range',
@@ -32,6 +32,8 @@ def get_calender_quant_analysis(ana_params):
 
     for row in row_res:
         res.append(row)
+
+    conn.close()
 
     return res
 
@@ -71,6 +73,15 @@ def exotic_data_evaluation(conn,itm_prod,itm_index,itm_precision,itm_range,v_typ
         col_type = 'pred_diff_ratio'
         compare_value = 'predict_value'
 
+    sql_sel = "select * from prod_data where prod_name = '%s'" % (itm_prod)
+    row_res = execute_select(conn, sql_sel)
+
+    prod_data = []
+    prod_time_list = []
+    for row in row_res:
+        prod_data.append(row)
+        prod_time_list.append(row[1])
+
     thr = 0.1
 
     sql_sel = "select pub_time,%s, current_value, %s from calender_rec " \
@@ -84,22 +95,19 @@ def exotic_data_evaluation(conn,itm_prod,itm_index,itm_precision,itm_range,v_typ
     dec_time_list = []
     dec_index_value_change = []
     for row in row_res:
-        overall_time_list.append(row[0])
-        overall_index_value_change.append(float(row[2])-float(row[3]))
-        if float(row[1])>0:
-            inc_time_list.append(row[0])
-            inc_index_value_change.append(float(row[2]) - float(row[3]))
-        else:
-            dec_time_list.append(row[0])
-            dec_index_value_change.append(float(row[2]) - float(row[3]))
+        if row[0] in prod_time_list:
+            overall_time_list.append(row[0])
+            overall_index_value_change.append(float(row[2]) - float(row[3]))
+
+            if float(row[1])>0:
+                inc_time_list.append(row[0])
+                inc_index_value_change.append(float(row[2]) - float(row[3]))
+            else:
+                dec_time_list.append(row[0])
+                dec_index_value_change.append(float(row[2]) - float(row[3]))
 
 
-    sql_sel = "select * from prod_data where prod_name = '%s'"%(itm_prod)
-    row_res = execute_select(conn, sql_sel)
 
-    prod_data = []
-    for row in row_res:
-        prod_data.append(row)
 
     ##找到相同情况标的位置
     overall_corresp_index_list = []
@@ -115,16 +123,16 @@ def exotic_data_evaluation(conn,itm_prod,itm_index,itm_precision,itm_range,v_typ
                 dec_corresp_index_list.append(k)
 
     sql_sel = "select * from calender_info where eco_index = '%s'"%itm_index
-    row_res = execute_select(sql_sel)
+    row_res = execute_select(conn,sql_sel)
     for row in row_res:
         pub_nation = row[1]
-        importance = row[3]
+        importance = '' #row[3]
 
     ##得到统计结果
     init_outcome = {
         'eco_index':itm_index,
         'pub_nation':pub_nation,
-        'pub_time':datetime.datetime.now(),
+        'pub_time':datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'product':itm_prod,
         'importance':importance,
         'time_precision':itm_precision,
@@ -157,17 +165,25 @@ def save_stat_res(conn, init_outcome, label, corresp_index_list, prod_data,index
     price_change_list = []
     tmp_outcome['count_similar'] = len(corresp_index_list)
     similar_date_list = []
+    similar_info_str = ''
     for itm_index in corresp_index_list:
+
+        if itm_index+step_size*time_range >= len(corresp_index_list):
+            tmp_outcome['count_similar'] -= 1
+            continue
+
         start_price = prod_data[itm_index][3]
         end_price = prod_data[itm_index+step_size*time_range][3]
 
-        similar_date_list.append(prod_data[itm_index][1])
+        similar_info_str += prod_data[itm_index][1].strftime('%Y-%m-%d %H:%M:%S') + ','
+        # similar_date_list.append(prod_data[itm_index][1].strftime('%Y-%m-%d %H:%M:%S'))
 
         price_change_list.append(end_price-start_price)
 
-    tmp_outcome['similar_info'] = str(similar_date_list)
+    # tmp_outcome['similar_info'] = str(similar_date_list)
+    tmp_outcome['similar_info'] = similar_info_str
 
-    tmp_outcome['avg'] = np.average(price_change_list)
+    tmp_outcome['ave'] = np.average(price_change_list)
     tmp_outcome['std'] = np.std(price_change_list)
 
     if label=='overall':
@@ -180,18 +196,22 @@ def save_stat_res(conn, init_outcome, label, corresp_index_list, prod_data,index
     elif label == 'increase':
 
         tmp_outcome['up_down'] = 1
+        tmp_outcome['correlation'] = correlation
 
     else:
 
         tmp_outcome['up_down'] = -1
+        tmp_outcome['correlation'] = correlation
 
 
-    sql_ins = "replace into calender_quant_res value ('%s','%s',%s,'%s','%s','%s',%d,'%s',%d,'%s',%d,'%s'," \
-              "%d,%d,%d)"%(tmp_outcome['eco_index'],tmp_outcome['pub_nation'],tmp_outcome['pub_time'],tmp_outcome['product'],
+    sql_ins = "replace into calender_quant_res value ('%s','%s','%s','%s','%s','%s',%d,'%s',%d,'%s',%f,'%s'," \
+              "%d,%f,%f)"%(tmp_outcome['eco_index'],tmp_outcome['pub_nation'],tmp_outcome['pub_time'],tmp_outcome['product'],
                            tmp_outcome['importance'],tmp_outcome['time_precision'],tmp_outcome['time_range'],
                            tmp_outcome['type'],tmp_outcome['count_similar'],tmp_outcome['similar_info'],
                            tmp_outcome['correlation'], tmp_outcome['macro_environ'], tmp_outcome['up_down'],
                            tmp_outcome['ave'], tmp_outcome['std'])
+
+    print sql_ins
 
     execute_insert(conn,sql_ins)
 
@@ -200,7 +220,8 @@ def save_stat_res(conn, init_outcome, label, corresp_index_list, prod_data,index
 
 
 
-
+if __name__ == '__main__':
+    calender_quant_analysis_offline()
 
 
 
