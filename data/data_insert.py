@@ -131,10 +131,12 @@ def prod_data_insert():
             low_p = 0 if row[4]=='--' else float(row[4])
             volume = 0 if row[9]=='--' else float(row[9])
             turnover = 0 if row[10]=='--' else float(row[10])
+            time_series_id = int(row[11])
 
             sql_ins = "replace into prod_data (prod_name,pub_time,open_price,close_price,high_price," \
-                      "low_price,prev_diff,prev_diff_ratio,volume,turnover) value ('%s','%s',%f,%f,%f,%f,%f,%f,%d,%d)" \
-                      % (prod_name, pub_time, open_p, close_p, high_p, low_p, row[12], row[13],volume, turnover)
+                      "low_price,prev_diff,prev_diff_ratio,volume,turnover,time_series_id) " \
+                      "value ('%s','%s',%f,%f,%f,%f,%f,%f,%d,%d,%d)" \
+                      % (prod_name, pub_time, open_p, close_p, high_p, low_p, row[12], row[13],volume, turnover,time_series_id)
             try:
                 execute_insert(conn, sql_ins)
             except:
@@ -142,7 +144,7 @@ def prod_data_insert():
 
 
 
-index_data_insert()
+prod_data_insert()
 conn.close()
 
 

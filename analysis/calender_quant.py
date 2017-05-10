@@ -9,6 +9,7 @@ import datetime
 import numpy as np
 from public.settings import *
 from public.sql_sentence import *
+from public.statistic_cal import *
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -77,10 +78,9 @@ def exotic_data_evaluation(conn,itm_prod,itm_index,itm_precision,itm_range,v_typ
     row_res = execute_select(conn, sql_sel)
 
     prod_data = []
-    prod_time_list = []
     for row in row_res:
         prod_data.append(row)
-        prod_time_list.append(row[1])
+
 
     thr = 0.1
 
@@ -94,17 +94,21 @@ def exotic_data_evaluation(conn,itm_prod,itm_index,itm_precision,itm_range,v_typ
     inc_index_value_change = []
     dec_time_list = []
     dec_index_value_change = []
-    for row in row_res:
-        if row[0] in prod_time_list:
-            overall_time_list.append(row[0])
-            overall_index_value_change.append(float(row[2]) - float(row[3]))
 
-            if float(row[1])>0:
-                inc_time_list.append(row[0])
-                inc_index_value_change.append(float(row[2]) - float(row[3]))
-            else:
-                dec_time_list.append(row[0])
-                dec_index_value_change.append(float(row[2]) - float(row[3]))
+    index_data_list = []
+    for row in row_res:
+        index_data_list.append(row)
+
+        # if row[0] in prod_time_list:
+        #     overall_time_list.append(row[0])
+        #     overall_index_value_change.append(float(row[2]) - float(row[3]))
+        #
+        #     if float(row[1])>0:
+        #         inc_time_list.append(row[0])
+        #         inc_index_value_change.append(float(row[2]) - float(row[3]))
+        #     else:
+        #         dec_time_list.append(row[0])
+        #         dec_index_value_change.append(float(row[2]) - float(row[3]))
 
 
 
@@ -147,48 +151,67 @@ def exotic_data_evaluation(conn,itm_prod,itm_index,itm_precision,itm_range,v_typ
         'std':0
     }
 
-    correlation = save_stat_res(conn, init_outcome, 'overall', overall_corresp_index_list, prod_data,overall_index_value_change)
-    save_stat_res(conn, init_outcome, 'increase', inc_corresp_index_list, prod_data,inc_index_value_change,correlation)
-    save_stat_res(conn, init_outcome, 'decrease', dec_corresp_index_list, prod_data,dec_index_value_change,correlation)
+    correlation = save_stat_res(conn, init_outcome, 'overall', index_data_list, itm_prod)
+    save_stat_res(conn, init_outcome, 'increase', index_data_list, itm_prod,correlation)
+    save_stat_res(conn, init_outcome, 'decrease', index_data_list, itm_prod,correlation)
 
     return
 
 
-def save_stat_res(conn, init_outcome, label, corresp_index_list, prod_data,index_value_change, correlation=0):
-    time_pre = init_outcome['time_precision']
-    time_range = init_outcome['time_range']
-
+def save_stat_res(conn, init_outcome, label, index_data_list, itm_prod, correlation=0):
     tmp_outcome = copy.copy(init_outcome)
 
+    time_pre = tmp_outcome['time_precision']
+    time_range = tmp_outcome['time_range']
     step_size = time_precision_step[time_pre]
 
-    price_change_list = []
-    tmp_outcome['count_similar'] = len(corresp_index_list)
-    similar_date_list = []
-    similar_info_str = ''
-    for itm_index in corresp_index_list:
+    sql_sel = "select pub_time, time_series_id from prod_data where prod_name = '%s'" % (itm_prod)
+    row_res = execute_select(conn, sql_sel)
+    prod_time_list = []
+    prod_id_list = []
 
-        if itm_index+step_size*time_range >= len(corresp_index_list):
-            tmp_outcome['count_similar'] -= 1
+    prod_time_id_pair = {}
+    for row in row_res:
+        prod_time_list.append(row[0])
+        prod_id_list.append(row[1])
+        prod_time_id_pair[row[0]] = row[1]
+
+    prod_id_max = max(prod_id_list)
+    prod_id_min = min(prod_id_list)
+
+    used_index_data_list = []
+    if label == 'overall':
+        filtered_index_data_list = [row for row in index_data_list if row[0] in prod_time_list]
+    elif label == 'increase':
+        filtered_index_data_list = [row for row in index_data_list if row[0] in prod_time_list and float(row[1]) > 0]
+    elif label == 'decrease':
+        filtered_index_data_list = [row for row in index_data_list if row[0] in prod_time_list and float(row[1]) < 0]
+
+    corresp_index_time_list = []
+    index_value_change_list = []
+    similar_info_str = ''
+    for row in filtered_index_data_list:
+        time_id = prod_time_id_pair[row[0]]
+        if time_id + step_size * time_range >= prod_id_max:
             continue
 
-        start_price = prod_data[itm_index][3]
-        end_price = prod_data[itm_index+step_size*time_range][3]
+        corresp_index_time_list.append(row[0])
+        similar_info_str += row[0].strftime('%Y-%m-%d %H:%M:%S') + ','    #.strftime('%Y-%m-%d %H:%M:%S')
+        index_value_change_list.append(float(row[2]) - float(row[3]))
 
-        similar_info_str += prod_data[itm_index][1].strftime('%Y-%m-%d %H:%M:%S') + ','
-        # similar_date_list.append(prod_data[itm_index][1].strftime('%Y-%m-%d %H:%M:%S'))
-
-        price_change_list.append(end_price-start_price)
-
-    # tmp_outcome['similar_info'] = str(similar_date_list)
+    tmp_outcome['count_similar'] = len(corresp_index_time_list)
     tmp_outcome['similar_info'] = similar_info_str
 
-    tmp_outcome['ave'] = np.average(price_change_list)
-    tmp_outcome['std'] = np.std(price_change_list)
+
+    tmp_output = statistic_cal(conn, 'calender_quant', corresp_index_time_list, time_pre, time_range, itm_prod)
+
+    tmp_outcome['ave'] = tmp_output.get('ave',0)
+    tmp_outcome['std'] = tmp_output.get('std',0)
+    price_change_list = tmp_output.get('priceChangeList',[])
 
     if label=='overall':
 
-        correlation_cal = np.corrcoef(np.asarray(index_value_change),np.asarray(price_change_list))
+        correlation_cal = np.corrcoef(np.asarray(index_value_change_list),np.asarray(price_change_list))
         correlation = correlation_cal[0][1]
 
         tmp_outcome['correlation'] = correlation
@@ -211,7 +234,7 @@ def save_stat_res(conn, init_outcome, label, corresp_index_list, prod_data,index
                            tmp_outcome['correlation'], tmp_outcome['macro_environ'], tmp_outcome['up_down'],
                            tmp_outcome['ave'], tmp_outcome['std'])
 
-    print sql_ins
+    # print sql_ins
 
     execute_insert(conn,sql_ins)
 

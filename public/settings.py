@@ -20,6 +20,10 @@ calender_time_precision_list = ['1d']
 calender_time_range_list = [1,3,5,10,20] #1,3,5,10,20
 
 
+##时间序列展示时取当前时间点前数据个数
+COUNT_DATA_PRE = 10
+
+
 ## calender index 名单
 calender_index_list = [
     '美国季调后非农就业人口'
