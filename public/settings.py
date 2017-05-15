@@ -26,7 +26,8 @@ COUNT_DATA_PRE = 10
 
 ## calender index 名单
 calender_index_list = [
-    '美国季调后非农就业人口'
+    '美国季调后非农就业人口',
+    '欧元区服务业PMI初值'
 ]
 #    '英国工业产出年率'
 #    '中国外汇储备',

@@ -39,7 +39,10 @@ def precious_metal_analysis(ana_mode,ana_params):
 
 if __name__=='__main__':
     ana_params = {
-
+        "prodName":'上金所Au9999',
+        "indexName":'美国季调后非农就业人口',
+        "range":5,
+        "precision":'1d'
     }
     res = precious_metal_analysis('calender_quant', ana_params)
 

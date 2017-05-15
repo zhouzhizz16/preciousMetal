@@ -10,29 +10,36 @@ import numpy as np
 from public.settings import *
 from public.sql_sentence import *
 from public.statistic_cal import *
+from visualization.plot import *
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
 
-
+##根据参数获取财经日历定量分析结果
 def get_calender_quant_analysis(ana_params):
     conn = MySQLdb.Connection(host="localhost", user="root", passwd="1qaz2wsx", db='cmb', charset="UTF8")
 
     #获取财经指标及交易品
     index_name = ana_params.get('indexName','')
     prod_name = ana_params.get('prodName','')
+    t_pre = ana_params.get('precision','')
+    t_range = ana_params.get('range',0)
 
 
-    sql_sel = "select * from calender_quant_res where eco_index = '%s' and product = '%s'"%(index_name,prod_name)
+    sql_sel = "select * from calender_quant_res where eco_index = '%s' and product = '%s' and " \
+              "time_precision = '%s' and time_range = %d "%(index_name,prod_name,t_pre,t_range)
     row_res = execute_select(conn,sql_sel)
 
     res = []
     res.append(['eco_index','pub_nation','pub_time','product','importance','time_precision','time_range',
-                'type','count_similar','similar_info','correlation','macro_environ','up_down','ave','std'])
+                'type','count_similar','similar_info','index_value_change','price_change','correlation',
+                'macro_environ','up_down','ave','std'])
 
     for row in row_res:
         res.append(row)
+
+    show_calender_quant_res(res)
 
     conn.close()
 
@@ -148,7 +155,9 @@ def exotic_data_evaluation(conn,itm_prod,itm_index,itm_precision,itm_range,v_typ
         'macro_environ':'',
         'up_down':0,
         'ave':0,
-        'std':0
+        'std':0,
+        'index_value_change':'',
+        'price_change':''
     }
 
     correlation = save_stat_res(conn, init_outcome, 'overall', index_data_list, itm_prod)
@@ -209,6 +218,17 @@ def save_stat_res(conn, init_outcome, label, index_data_list, itm_prod, correlat
     tmp_outcome['std'] = tmp_output.get('std',0)
     price_change_list = tmp_output.get('priceChangeList',[])
 
+    index_value_change_str = ''
+    for itm_ind_value in index_value_change_list:
+        index_value_change_str += str(itm_ind_value) + ','
+
+    price_change_str = ''
+    for itm_price in price_change_list:
+        price_change_str += str(itm_price) + ','
+
+    tmp_outcome['index_value_change'] = index_value_change_str
+    tmp_outcome['price_change'] = price_change_str
+
     if label=='overall':
 
         correlation_cal = np.corrcoef(np.asarray(index_value_change_list),np.asarray(price_change_list))
@@ -227,10 +247,11 @@ def save_stat_res(conn, init_outcome, label, index_data_list, itm_prod, correlat
         tmp_outcome['correlation'] = correlation
 
 
-    sql_ins = "replace into calender_quant_res value ('%s','%s','%s','%s','%s','%s',%d,'%s',%d,'%s',%f,'%s'," \
+    sql_ins = "replace into calender_quant_res value ('%s','%s','%s','%s','%s','%s',%d,'%s',%d,'%s','%s','%s',%f,'%s'," \
               "%d,%f,%f)"%(tmp_outcome['eco_index'],tmp_outcome['pub_nation'],tmp_outcome['pub_time'],tmp_outcome['product'],
                            tmp_outcome['importance'],tmp_outcome['time_precision'],tmp_outcome['time_range'],
                            tmp_outcome['type'],tmp_outcome['count_similar'],tmp_outcome['similar_info'],
+                           tmp_outcome['index_value_change'],tmp_outcome['price_change'],
                            tmp_outcome['correlation'], tmp_outcome['macro_environ'], tmp_outcome['up_down'],
                            tmp_outcome['ave'], tmp_outcome['std'])
 
@@ -242,9 +263,43 @@ def save_stat_res(conn, init_outcome, label, index_data_list, itm_prod, correlat
     return correlation
 
 
+##展示财经日历定量分析结果
+def show_calender_quant_res(res):
+    import pandas as pd
+
+    res_data = pd.DataFrame(res[1:],columns=res[0])
+
+    print res_data['eco_index']
+
+    res_data = res_data[['type','up_down','index_value_change','price_change']]
+
+    for row in res_data.values:
+        if row[0] == u'预值差异' and row[1] == 0:
+            index_tmp_list = row[2].split(',')
+            price_tmp_list = row[3].split(',')
+
+            if not index_tmp_list or not price_tmp_list:
+                continue
+
+            index_change_list = np.asarray([float(x) for x in index_tmp_list if x])
+            price_change_list = np.asarray([float(x) for x in price_tmp_list if x])
+            reg_line_plot(index_change_list,price_change_list)
+
+    return
+
+
 
 if __name__ == '__main__':
-    calender_quant_analysis_offline()
+    # calender_quant_analysis_offline()
+
+    ana_params = {
+        "prodName": '上金所Au9999',
+        "indexName": '欧元区服务业PMI初值',
+        "range": 20,
+        "precision": '1d'
+    }
+
+    get_calender_quant_analysis(ana_params)
 
 
 

@@ -19,18 +19,18 @@ def statistic_cal(conn, mode, similar_time_list, t_pre, t_range, itm_prod):
         similar_time_str += '\'' + similar_time_list[k].strftime('%Y-%m-%d %H:%M:%S') + '\'' + ','
     similar_time_str += '\'' + similar_time_list[-1].strftime('%Y-%m-%d %H:%M:%S') + '\'' + ')'
 
+
+    sql_sel = "select pub_time, time_series_id from prod_data where prod_name = '%s' and " \
+              "pub_time in %s" % (itm_prod, similar_time_str)
+
+    # print sql_sel
+    row_res = execute_select(conn, sql_sel)
+
+    step_size = time_precision_step[t_pre]
+
     if mode in ['calender_quant','technique_analysis']:
 
-        sql_sel = "select pub_time, time_series_id from prod_data where prod_name = '%s' and " \
-                  "pub_time in %s" % (itm_prod,similar_time_str)
-        # print sql_sel
-        row_res = execute_select(conn, sql_sel)
-
-        step_size = time_precision_step[t_pre]
-
-        time_series_id_list = []
         price_change_list = []
-        similar_time_series = []
         for row in row_res:
             tmp_id = row[1]
 
@@ -63,14 +63,6 @@ def statistic_cal(conn, mode, similar_time_list, t_pre, t_range, itm_prod):
 
 
     elif mode == 'time_series_analysis':
-
-        sql_sel = "select pub_time, time_series_id from prod_data where prod_name = '%s' and " \
-                  "pub_time in %s" % (itm_prod, similar_time_str)
-        # print sql_sel
-        row_res = execute_select(conn, sql_sel)
-
-        step_size = time_precision_step[t_pre]
-
 
         price_change_list = []
         price_data_list = []
@@ -115,28 +107,7 @@ def statistic_cal(conn, mode, similar_time_list, t_pre, t_range, itm_prod):
 
 
 
-    # sql_sel_series = "select pub_time, time_series_id, close_price from prod_data where prod_name = '%s' and " \
-    #                  "time_series_id between %d and %d" % (
-    #                  itm_prod, tmp_id - COUNT_DATA_PRE, tmp_id + step_size * t_range)
-    # row_res_series = execute_select(conn, sql_sel)
-    #
-    # for k in range(step_size * t_range - 1):
-    #     time_series_id_list.append(tmp_id + k)
-    #
-    #
-    #
-    #
-    #     prod_time_list = [x[0] for x in row_res]
-    #     prod_id_list = [x[1] for x in row_res]
-    #     prod_id_max = max(prod_id_list)
-    #     prod_id_min = min(prod_id_list)
-    #
-    #     price_change_list = []
-    #     for itm_index in corresp_index_list:
-    #         start_price = prod_data[itm_index][3]
-    #         end_price = prod_data[itm_index + step_size * time_range][3]
-    #
-    #         price_change_list.append(end_price - start_price)
+
 
 
 

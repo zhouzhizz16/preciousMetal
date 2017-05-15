@@ -18,11 +18,14 @@ def index_data_insert():
     with open(data_input_file, 'rb') as f:
         reader = csv.reader(f)
 
-        eco_ind_name = '美国季调后非农就业人口'
+        eco_ind_name = '欧元区服务业PMI初值'
 
         input_data = []
         for row in reader:
             if row[5] == eco_ind_name:
+            # if row[1] == '公布时间':
+            #     continue
+
                 row[1] = row[1].split(' ')[0]
                 row[2] = row[2].replace('%','')
                 row[2] = 0 if row[2]=='--' else float(row[2])
@@ -30,16 +33,17 @@ def index_data_insert():
                 row[3] = 0 if row[3] == '--' else float(row[3])
                 row[4] = row[4].replace('%', '')
                 row[4] = 0 if row[4] == '--' else float(row[4])
+                eco_ind_name = row[5]
                 input_data.append(row)
 
         processed_input_data = []
         for k in range(len(input_data) - 1):
 
             prd_diff = input_data[k][2] - input_data[k][4]
-            prd_diff_ratio = prd_diff / input_data[k][4]
+            prd_diff_ratio = prd_diff / (input_data[k][4]+0.00000001)
 
             prv_diff = input_data[k][2] - input_data[k][3]
-            prv_diff_ratio = prv_diff / input_data[k][3]
+            prv_diff_ratio = prv_diff / (input_data[k][3]+0.00000001)
 
             input_data[k].append(prd_diff)
             input_data[k].append(prd_diff_ratio)
@@ -76,6 +80,7 @@ def index_data_insert():
             try:
                 execute_insert(conn,sql_ins)
             except:
+                print traceback.format_exc()
                 pass
 
 
@@ -144,7 +149,7 @@ def prod_data_insert():
 
 
 
-prod_data_insert()
+index_data_insert()
 conn.close()
 
 
