@@ -149,7 +149,86 @@ def prod_data_insert():
 
 
 
-index_data_insert()
+def index_info_insert():
+    data_input_file = '/home/zhi/Desktop/财经指数信息.csv'
+
+    with open(data_input_file, 'rb') as f:
+        reader = csv.reader(f)
+
+        for row in reader:
+            if row[0] == '财经指数':
+                continue
+
+            eco_index_name = row[0]
+
+            pub_nation = get_pub_nation(eco_index_name)
+
+            pub_period = get_pub_period(row[3])
+
+            influence = row[4]
+
+            index_explain = row[5]
+
+            index_statistics = row[6]
+
+            reason = row [7]
+
+            sql_ins = "replace into calender_info (eco_index, pub_nation, pub_period, importance, influence, " \
+                      "index_explain, index_statistic, reason) value ('%s','%s', '%s','%s', '%s','%s', '%s','%s'" \
+                      ")"%(eco_index_name, pub_nation, pub_period, '', influence, index_explain, index_statistics,
+                        reason)
+
+            try:
+                execute_insert(conn, sql_ins)
+            except:
+                print traceback.format_exc()
+                pass
+
+
+
+def get_pub_nation(index_name):
+    if '美国' in index_name:
+        return 'USA'
+    elif '欧元区' in index_name:
+        return 'EUR'
+    elif '中国' in index_name:
+        return 'CHN'
+    elif '英国' in index_name:
+        return 'GBR'
+    elif '澳大利亚' in index_name:
+        return 'AUS'
+    elif '德国' in index_name:
+        return 'GER'
+    elif '日本' in index_name:
+        return 'JPN'
+    elif '加拿大' in index_name:
+        return 'CAN'
+    elif '瑞士' in index_name:
+        return 'SUI'
+    elif '新西兰' in index_name:
+        return 'NZL'
+    elif '意大利' in index_name:
+        return 'ITA'
+    elif '法国' in index_name:
+        return 'FRA'
+    elif '西班牙' in index_name:
+        return 'ESP'
+    else:
+        return ''
+
+
+def get_pub_period(txt_content):
+    if '一年八次' in txt_content or '每年8次' in txt_content:
+        return 'eight times per year'
+    elif '季' in txt_content:
+        return 'quarterly'
+    elif '月' in txt_content:
+        return 'monthly'
+    elif '周' in txt_content:
+        return 'weekly'
+
+
+index_info_insert()
 conn.close()
 
 
