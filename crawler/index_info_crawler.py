@@ -11,6 +11,7 @@ import json
 import csv
 import traceback
 import random
+from config.config import *
 from time import sleep
 
 reload(sys)
@@ -28,7 +29,7 @@ def cal_index_info_crawler():
 
     cal_info_url_list = []
 
-    cal_info_url = 'http://www.kxt.com/data/usoiac%3deci.html'
+    cal_info_url = RILI_WEB_URL + '/data/usoiac%3deci.html'
 
     res = requests.get(cal_info_url)
 
@@ -43,7 +44,7 @@ def cal_index_info_crawler():
         url_text = itm_li.find('a').get('href')
         title = itm_li.find('a').get('title')
         # print url_text
-        cal_info_url_list.append('http://www.kxt.com'+url_text)
+        cal_info_url_list.append(RILI_WEB_URL+url_text)
 
     print len(li_list)
 

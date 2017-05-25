@@ -4,13 +4,15 @@
 import sys
 import MySQLdb
 import csv
+from config.config import *
 from public.sql_sentence import *
 reload(sys)
 sys.setdefaultencoding('utf-8')
 
 # data_input_file = '/home/zhi/Desktop/招行/EcoDataCrawler/历史指标合并.csv'
 
-conn = MySQLdb.Connection(host="localhost", user="root", passwd="1qaz2wsx",db='cmb', charset="UTF8")
+conn = MySQLdb.Connection(host=pm_neo4j_DB.host, user=pm_neo4j_DB.user, passwd=pm_neo4j_DB.password, db=pm_neo4j_DB.database, charset="UTF8")
+
 
 def index_data_insert():
     data_input_file = '/home/zhi/Desktop/招行/EcoDataCrawler/历史指标合并.csv'
@@ -173,10 +175,16 @@ def index_info_insert():
 
             reason = row [7]
 
+            if row[8] in ['利空','利多']:
+                gold_influence = row[8]
+            else:
+                gold_influence = ''
+
             sql_ins = "replace into calender_info (eco_index, pub_nation, pub_period, importance, influence, " \
-                      "index_explain, index_statistic, reason) value ('%s','%s', '%s','%s', '%s','%s', '%s','%s'" \
+                      "index_explain, index_statistic, reason,gold_influence) value ('%s','%s', '%s','%s', '%s','%s'," \
+                      "'%s','%s','%s'" \
                       ")"%(eco_index_name, pub_nation, pub_period, '', influence, index_explain, index_statistics,
-                        reason)
+                        reason,gold_influence)
 
             try:
                 execute_insert(conn, sql_ins)

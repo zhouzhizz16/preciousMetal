@@ -13,6 +13,7 @@ import json
 import csv
 import traceback
 import random
+from config.config import *
 from time import sleep
 import datetime
 
@@ -22,13 +23,14 @@ sys.setdefaultencoding("utf8")
 
 
 def cal_index_influ_crawler():
-    conn = MySQLdb.Connection(host="localhost", user="root", passwd="1qaz2wsx", db='cmb', charset="UTF8")
+    conn = MySQLdb.Connection(host=pm_neo4j_DB.host, user=pm_neo4j_DB.user, passwd=pm_neo4j_DB.password,
+                              db=pm_neo4j_DB.database, charset="UTF8")
 
     url_index_dict, url_list = calender_data_load(u'财经指数信息.csv')
 
     today_date = datetime.datetime.today()
 
-    for k in range(540,1080):
+    for k in range(0,1080):
 
         rdm_num = float(random.randrange(0, 200, 1)) / 200
         sleep(rdm_num)
@@ -40,7 +42,7 @@ def cal_index_influ_crawler():
         date_str = tmp_date.strftime('%Y-%m-%d')
         print 'processing date ', date_str
 
-        crawl_url = 'http://www.kxt.com/rili/%s.html'%date_str
+        crawl_url = RILI_WEB_URL + '/rili/%s.html'%date_str
 
         res = requests.get(crawl_url, timeout = 30)
         # print res.status_code
@@ -68,7 +70,7 @@ def cal_index_influ_crawler():
 
             url_txt = td_list[-1].find('a').get('href')
 
-            url_txt = 'http://www.kxt.com' + url_txt
+            url_txt = RILI_WEB_URL + url_txt
 
             if url_txt in url_list:
                 eco_index_name = url_index_dict[url_txt]

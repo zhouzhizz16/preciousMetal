@@ -44,7 +44,8 @@ if __name__=='__main__':
         "range":5,
         "precision":'1d'
     }
-    res = precious_metal_analysis('calender_quant', ana_params)
+    # res = precious_metal_analysis('calender_quant', ana_params)
+    res = precious_metal_analysis('calender_quali', ana_params)
 
     import json
     print json.dumps(res,ensure_ascii=False,indent=4)

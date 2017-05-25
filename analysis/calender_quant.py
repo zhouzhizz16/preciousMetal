@@ -7,6 +7,7 @@ import MySQLdb
 import copy
 import datetime
 import numpy as np
+from config.config import *
 from public.settings import *
 from public.sql_sentence import *
 from public.statistic_cal import *
@@ -18,7 +19,8 @@ sys.setdefaultencoding('utf-8')
 
 ##根据参数获取财经日历定量分析结果
 def get_calender_quant_analysis(ana_params):
-    conn = MySQLdb.Connection(host="localhost", user="root", passwd="1qaz2wsx", db='cmb', charset="UTF8")
+    conn = MySQLdb.Connection(host=pm_neo4j_DB.host, user=pm_neo4j_DB.user, passwd=pm_neo4j_DB.password,
+                              db=pm_neo4j_DB.database, charset="UTF8")
 
     #获取财经指标及交易品
     index_name = ana_params.get('indexName','')
