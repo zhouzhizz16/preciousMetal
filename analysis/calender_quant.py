@@ -52,9 +52,24 @@ def get_calender_quant_analysis(ana_params):
 def calender_quant_analysis_offline():
     conn = MySQLdb.Connection(host="localhost", user="root", passwd="1qaz2wsx", db='cmb', charset="UTF8")
 
+    overall_prod_list = []
+    overall_calender_index_list = []
+
+    sel_sent = "select distinct prod_name from prod_data"
+    row_res = execute_select(conn, sel_sent)
+    for row in row_res:
+        overall_prod_list.append(row[0])
+
+    sel_sent = "select distinct eco_index from calender_rec"
+    row_res = execute_select(conn, sel_sent)
+    for row in row_res:
+        overall_calender_index_list.append(row[0])
+
+
     ##循环经济指数,产品
-    for itm_prod in prod_list:
-        for itm_index in calender_index_list:
+    for itm_prod in overall_prod_list:
+        for itm_index in overall_calender_index_list:
+            print 'processing ', itm_index, ' on ', itm_prod
             for itm_precision in calender_time_precision_list:
                 for itm_range in calender_time_range_list:
                     calender_quant_analysis_cal(conn,itm_prod,itm_index,itm_precision,itm_range)
@@ -137,6 +152,8 @@ def exotic_data_evaluation(conn,itm_prod,itm_index,itm_precision,itm_range,v_typ
 
     sql_sel = "select * from calender_info where eco_index = '%s'"%itm_index
     row_res = execute_select(conn,sql_sel)
+    if not row_res:
+        return
     for row in row_res:
         pub_nation = row[1]
         importance = '' #row[3]
@@ -156,6 +173,8 @@ def exotic_data_evaluation(conn,itm_prod,itm_index,itm_precision,itm_range,v_typ
         'correlation':0,
         'macro_environ':'',
         'up_down':0,
+        'num_price_up':0,
+        'num_price_down':0,
         'ave':0,
         'std':0,
         'index_value_change':'',
@@ -219,6 +238,14 @@ def save_stat_res(conn, init_outcome, label, index_data_list, itm_prod, correlat
     tmp_outcome['ave'] = tmp_output.get('ave',0)
     tmp_outcome['std'] = tmp_output.get('std',0)
     price_change_list = tmp_output.get('priceChangeList',[])
+    tmp_outcome['num_price_up'] = tmp_output.get('numPriceUp',0)
+    tmp_outcome['num_price_down'] = tmp_output.get('numPriceDown', 0)
+    if tmp_outcome['count_similar'] == 0:
+        tmp_outcome['price_up_ratio'] = 0
+        tmp_outcome['price_down_ratio'] = 0
+    else:
+        tmp_outcome['price_up_ratio'] = float(tmp_outcome['num_price_up'])/tmp_outcome['count_similar']
+        tmp_outcome['price_down_ratio'] = float(tmp_outcome['num_price_down']) / tmp_outcome['count_similar']
 
     index_value_change_str = ''
     for itm_ind_value in index_value_change_list:
@@ -250,12 +277,13 @@ def save_stat_res(conn, init_outcome, label, index_data_list, itm_prod, correlat
 
 
     sql_ins = "replace into calender_quant_res value ('%s','%s','%s','%s','%s','%s',%d,'%s',%d,'%s','%s','%s',%f,'%s'," \
-              "%d,%f,%f)"%(tmp_outcome['eco_index'],tmp_outcome['pub_nation'],tmp_outcome['pub_time'],tmp_outcome['product'],
-                           tmp_outcome['importance'],tmp_outcome['time_precision'],tmp_outcome['time_range'],
-                           tmp_outcome['type'],tmp_outcome['count_similar'],tmp_outcome['similar_info'],
-                           tmp_outcome['index_value_change'],tmp_outcome['price_change'],
+              "%d,%d,%f,%d,%f,%f,%f)"%(tmp_outcome['eco_index'],tmp_outcome['pub_nation'],tmp_outcome['pub_time'],
+                           tmp_outcome['product'],tmp_outcome['importance'],tmp_outcome['time_precision'],
+                           tmp_outcome['time_range'],tmp_outcome['type'],tmp_outcome['count_similar'],
+                           tmp_outcome['similar_info'],tmp_outcome['index_value_change'],tmp_outcome['price_change'],
                            tmp_outcome['correlation'], tmp_outcome['macro_environ'], tmp_outcome['up_down'],
-                           tmp_outcome['ave'], tmp_outcome['std'])
+                           tmp_outcome['num_price_up'],tmp_outcome['price_up_ratio'],tmp_outcome['num_price_down'],
+                           tmp_outcome['price_down_ratio'], tmp_outcome['ave'], tmp_outcome['std'])
 
     # print sql_ins
 
@@ -292,16 +320,16 @@ def show_calender_quant_res(res):
 
 
 if __name__ == '__main__':
-    # calender_quant_analysis_offline()
+    calender_quant_analysis_offline()
 
-    ana_params = {
-        "prodName": '上金所Au9999',
-        "indexName": '欧元区服务业PMI初值',
-        "range": 20,
-        "precision": '1d'
-    }
-
-    get_calender_quant_analysis(ana_params)
+    # ana_params = {
+    #     "prodName": '上金所Au9999',
+    #     "indexName": '欧元区服务业PMI初值',
+    #     "range": 20,
+    #     "precision": '1d'
+    # }
+    #
+    # get_calender_quant_analysis(ana_params)
 
 
 

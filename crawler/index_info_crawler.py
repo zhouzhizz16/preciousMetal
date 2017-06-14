@@ -22,7 +22,7 @@ sys.setdefaultencoding("utf8")
 
 def cal_index_info_crawler():
 
-    csvfile = file(u'财经指数信息.csv', 'wb')
+    csvfile = file(u'cal_info.csv', 'wb')
     writer = csv.writer(csvfile, dialect='excel')
 
     writer.writerow([u'财经指数', u'url', u'数据公布机构', u'发布频率', u'数据影响', u'数据释义', u'统计方法', u'关注原因',u'金银影响'])

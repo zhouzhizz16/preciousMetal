@@ -9,6 +9,13 @@ class pm_neo4j_DB():
     host = 'localhost'
 
 
+# class pm_neo4j_DB():
+#     database = 'cmb'
+#     user = 'root'
+#     password = 'cmbfintech'
+#     host = 'localhost'
+
+
 ## 财经日历爬虫
 RILI_WEB_URL = 'http://www.kxt.com'
 
