@@ -1,0 +1,96 @@
+drop table if exists calender_rec;
+CREATE TABLE calender_rec(
+   eco_index VARCHAR(100) NOT NULL,
+   pub_nation VARCHAR(40) NOT NULL,
+   pub_time DATETIME NOT NULL,
+   pub_period VARCHAR(40) NOT NULL,
+   importance VARCHAR(40) NOT NULL,
+   current_value FLOAT,
+   previous_value FLOAT,
+   predict_value FLOAT,
+   pred_diff FLOAT,
+   pred_diff_ratio FLOAT,
+   prev_diff FLOAT,
+   prev_diff_ratio FLOAT,
+   PRIMARY KEY (eco_index, pub_time )
+);
+
+
+CREATE TABLE calender_info(
+   eco_index VARCHAR(100) NOT NULL,
+   pub_nation VARCHAR(40) NOT NULL,
+   pub_period VARCHAR(40),
+   importance VARCHAR(40),
+   influence VARCHAR(200),
+   index_explain VARCHAR(500),
+   index_statistic VARCHAR(500),
+   reason VARCHAR(500),
+   PRIMARY KEY (eco_index)
+);
+
+drop table if exists calender_quant_res;
+CREATE TABLE calender_quant_res(
+   eco_index VARCHAR(100) NOT NULL,
+   pub_nation VARCHAR(40) NOT NULL,
+   pub_time DATETIME NOT NULL,
+   product VARCHAR(40) NOT NULL,
+   importance VARCHAR(40) NOT NULL,
+   time_precision VARCHAR(40) NOT NULL,
+   time_range INT NOT NULL,
+   type VARCHAR(40) NOT NULL,
+   count_similar INT,
+   similar_info VARCHAR(2000),
+   index_value_change VARCHAR(2000),
+   price_change VARCHAR(2000),
+   correlation FLOAT,
+   macro_environ VARCHAR(40) NOT NULL,
+   up_down INT,
+   num_price_up INT,
+   price_up_ratio FLOAT,
+   num_price_down INT,
+   price_down_ratio FLOAT,
+   ave FLOAT,
+   std FLOAT,
+   PRIMARY KEY (eco_index, pub_time, type, up_down,time_precision, time_range)
+);
+
+
+drop table if exists calender_info;
+CREATE TABLE prod_data(
+   prod_name VARCHAR(100) NOT NULL,
+   pub_time DATETIME NOT NULL,
+   open_price FLOAT,
+   close_price FLOAT,
+   high_price FLOAT,
+   low_price FLOAT,
+   prev_diff FLOAT,
+   prev_diff_ratio FLOAT,
+   volume FLOAT,
+   turnover FLOAT,
+   time_series_id INT,
+   PRIMARY KEY (prod_name, pub_time )
+);
+
+
+CREATE TABLE news_rec(
+   id INT PRIMARY KEY NOT NULL AUTO_INCREMENT,
+   title VARCHAR(50) NOT NULL,
+   pub_time DATETIME NOT NULL,
+   media_source VARCHAR(40) NOT NULL,
+   abstract VARCHAR(100) NOT NULL,
+   content VARCHAR(500) NOT NULL,
+   url VARCHAR(50),
+   labels VARCHAR(50),
+   keywords VARCHAR(50)
+);
+
+CREATE TABLE news_res(
+   title VARCHAR(50) NOT NULL,
+   pub_time DATETIME NOT NULL,
+   media_source VARCHAR(40) NOT NULL,
+   abstract VARCHAR(100) NOT NULL,
+   content VARCHAR(500) NOT NULL,
+   url VARCHAR(50),
+   similar_id VARCHAR(100),
+   PRIMARY KEY (title)
+);
